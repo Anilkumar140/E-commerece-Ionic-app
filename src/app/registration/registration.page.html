@@ -1,0 +1,403 @@
+<html>
+  <head>
+    <title>Leaflet Address Lookup and Coordinates</title>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style type="text/css">
+      html,
+      body {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+      }
+      .container {
+        width: 95%;
+        max-width: 980px;
+        padding: 1% 2%;
+        margin: 0 auto;
+      }
+      #lat,
+      #lon {
+        text-align: right;
+      }
+      #map {
+        width: 100%;
+        height: 50%;
+        padding: 0;
+        margin: 0;
+      }
+      .address {
+        cursor: pointer;
+      }
+      .address:hover {
+        color: #aa0000;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <b>Coordinates</b>
+      <form>
+        <input type="text" name="lat" id="lat" size="12" value="" />
+        <input type="text" name="lon" id="lon" size="12" value="" />
+      </form>
+
+      <b>Address Lookup</b>
+      <div id="search">
+        <input type="text" name="addr" value="" id="addr" size="58" />
+        <button type="button" onclick="addr_search();">Search</button>
+        <div id="results"></div>
+        <hr />
+        <div id="results2"></div>
+        <hr />
+        <div id="results3"></div>
+      </div>
+
+      <br />
+
+      <div id="map"></div>
+    </div>
+
+    <script type="text/javascript">
+      $(document).ready(function () {
+        $(".leaflet-pane .leaflet-marker-pane img").attr(
+          "src",
+          "http://localhost:8000/static/img/marker.gif"
+        );
+        $(".leaflet-pane .leaflet-marker-pane img").css("height", "50px");
+        $(".leaflet-pane .leaflet-marker-pane img").css("width", "40px");
+      });
+      $(document).ready(function () {
+        $(".leaflet-pana .leaflet-marker-pana img").attr(
+          "src",
+          "http://localhost:8000/static/img/marker.gif"
+        );
+        $(".leaflet.pana .leaflet-marker-pana img").css("height", "50px");
+        $(".leaflet.pana .leaflet-marker-pana img").css("width", "45px");
+      });
+      // New York
+      var startlat = 40.75637123;
+      var startlon = -73.98545321;
+
+      var options = {
+        center: [startlat, startlon],
+        zoom: 9,
+      };
+
+      document.getElementById("lat").value = startlat;
+      document.getElementById("lon").value = startlon;
+
+      var map = L.map("map", options);
+      var nzoom = 12;
+
+      L.tileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png", {
+        attribution: "OSM",
+      }).addTo(map);
+
+      var myMarker = L.marker([startlat, startlon], {
+        title: "Coordinates",
+        alt: "Coordinates",
+        draggable: true,
+      })
+        .addTo(map)
+        .on("dragend", function () {
+          var lat = myMarker.getLatLng().lat.toFixed(8);
+          var lon = myMarker.getLatLng().lng.toFixed(8);
+          var czoom = map.getZoom();
+          if (czoom < 18) {
+            nzoom = czoom + 2;
+          }
+          if (nzoom > 18) {
+            nzoom = 18;
+          }
+          if (czoom != 18) {
+            map.setView([lat, lon], nzoom);
+          } else {
+            map.setView([lat, lon]);
+          }
+          document.getElementById("lat").value = lat;
+          document.getElementById("lon").value = lon;
+          myMarker.bindPopup("Lat " + lat + "<br />Lon " + lon).openPopup();
+        });
+
+      function chooseAddr(arr) {
+        console.log("data" + arr);
+
+        var lat1 = arr.latitude;
+        var lng1 = arr.longitude;
+
+        myMarker.closePopup();
+        map.setView([lat1, lng1], 7);
+        myMarker.setLatLng([lat1, lng1]);
+        lat = lat1.toFixed(8);
+        lon = lng1.toFixed(8);
+        document.getElementById("lat").value = lat;
+        document.getElementById("lon").value = lon;
+        myMarker.bindPopup("Lat " + lat + "<br />Lon " + lon).openPopup();
+        //  console.log(reg, c_code, locality)
+        var sub_search =
+          "<br><input type='text' id='subsearch'><button onclick='mkk(" +
+          JSON.stringify(arr) +
+          ");return false;'>Search</button>";
+        document.getElementById("results2").innerHTML = sub_search;
+        if (arr.country_code == "MYS") {
+          $.getJSON("/static/geojson/malaysia.geojson", function (hoodData) {
+            L.geoJson(hoodData).addTo(map);
+          });
+        } else if (arr.country_code == "IND") {
+          $.getJSON("/static/geojson/india.geojson", function (hoodData) {
+            L.geoJson(hoodData).addTo(map);
+          });
+        }
+      }
+
+      function chooseSubAddress(arr) {
+        var lat1 = arr.latitude;
+        var lng1 = arr.longitude;
+
+        myMarker.closePopup();
+        map.setView([lat1, lng1], 10);
+        myMarker.setLatLng([lat1, lng1]);
+        lat = lat1.toFixed(8);
+        lon = lng1.toFixed(8);
+        document.getElementById("lat").value = lat;
+        document.getElementById("lon").value = lon;
+        myMarker.bindPopup("Lat " + lat + "<br />Lon " + lon).openPopup();
+        if (arr.region_code == "KUL") {
+          $.getJSON(
+            "/static/geojson/kuala_lumpur.geojson",
+            function (hoodData) {
+              L.geoJson(hoodData).addTo(map);
+            }
+          );
+        }
+      }
+
+      function subsearch(arr) {
+        var search = $("#subsearch").val();
+        var reg = arr.region;
+        var c_code = arr.country_code;
+        var locality = arr.locality;
+        console.log(c_code, reg, locality);
+        var data = get_coordinate(search);
+        var arr = data.data;
+        console.log("sample", data.data);
+        var result = "";
+        if (locality != null && reg != null) {
+          result = arr.filter(function (item) {
+            return (
+              item.country_code == c_code &&
+              item.region == reg &&
+              item.locality == locality
+            );
+          });
+          console.log(
+            arr.filter(function (item) {
+              return (
+                item.country_code == c_code &&
+                item.region == reg &&
+                item.locality == locality
+              );
+            })
+          );
+        } else if (reg != null) {
+          console.log("region not null");
+          result = arr.filter(function (item) {
+            return item.country_code == c_code && item.region == reg;
+          });
+          console.log(
+            arr.filter(function (item) {
+              return item.country_code == c_code && item.region == reg;
+            })
+          );
+        } else {
+          result = arr.filter(function (item) {
+            return item.country_code == c_code;
+          });
+          console.log(
+            arr.filter(function (item) {
+              return item.country_code == c_code;
+            })
+          );
+        }
+        console.log("*************");
+        console.log(result);
+        if (result.length == 0) {
+          alert("Please searh inside region");
+        } else {
+          drawmap(result[0]);
+          getResult4(result);
+          // $("#result2").html("")
+        }
+      }
+
+      function getResult4(arr) {
+        var out = "<br />";
+        var i;
+        if (arr.length > 0) {
+          $(".res2").show();
+          for (i = 0; i < arr.length; i++) {
+            data = JSON.stringify(arr[i]);
+            out +=
+              "<div class='address' title='Show Location and Coordinates' onclick='chooseSubAddress(" +
+              data +
+              ");return false;'>" +
+              arr[i].label +
+              "</div>";
+          }
+          document.getElementById("results3").innerHTML = out;
+        } else {
+          document.getElementById("results3").innerHTML =
+            "Sorry, no results...";
+        }
+      }
+
+      function drawmap(arr) {
+        var lat1 = arr.latitude;
+        var lng1 = arr.longitude;
+
+        myMarker.closePopup();
+        map.setView([lat1, lng1], 12);
+        myMarker.setLatLng([lat1, lng1]);
+        lat = lat1.toFixed(8);
+        lon = lng1.toFixed(8);
+        document.getElementById("lat").value = lat;
+        document.getElementById("lon").value = lon;
+        myMarker.bindPopup("Lat " + lat + "<br />Lon " + lon).openPopup();
+        if (arr.region_code == "KUL") {
+          $.getJSON(
+            "/static/geojson/kuala_lumpur.geojson",
+            function (hoodData) {
+              L.geoJson(hoodData).addTo(map);
+            }
+          );
+        }
+      }
+
+      function getResult(arr) {
+        var parent_add = $("#addr").val();
+        var out = "<br />";
+        var i;
+        if (arr.length > 0) {
+          for (i = 0; i < arr.length; i++) {
+            var data = JSON.stringify(arr[i]);
+            out +=
+              "<div class='address' title='Show Location and Coordinates' onclick='chooseAddr(" +
+              data +
+              ");return false;'>" +
+              arr[i].label +
+              "</div>";
+          }
+          document.getElementById("results").innerHTML = out;
+        } else {
+          document.getElementById("results").innerHTML = "Sorry, no results...";
+        }
+      }
+
+      function addr_search() {
+        var inp = document.getElementById("addr");
+        var xmlhttp = new XMLHttpRequest();
+        var url =
+          "http://api.positionstack.com/v1/forward?access_key=72c76ad8082ee9e135c2834394c63dfa&query=" +
+          inp.value;
+        xmlhttp.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+            var myArr = JSON.parse(this.responseText);
+            console.log("2nd Search: ", myArr.data);
+            getResult(myArr.data);
+          }
+        };
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send();
+      }
+
+      function sub_search() {
+        var parent_search = $("#addr").val();
+        var searchValue = $("#subSearch").val();
+        // console.log(searchValue);
+        var res = get_coordinate(parent_search);
+        var res2 = get_coordinate(searchValue);
+
+        console.log("res", res);
+        console.log("res2", res2);
+        for (i = 0; i < res.data.length; i++) {
+          var c_code = res.data[i].country_code;
+          var region = res.data[i].region;
+          var locality = res.data[i].locality;
+          var type = res.data[i].type;
+          for (j = 0; j < res2.data.length; j++) {
+            var c_code2 = res2.data[j].country_code;
+            var region2 = res2.data[i].region;
+            var locality2 = res2.data[i].locality;
+            var type2 = res2.data[i].type;
+
+            if (type == "country") {
+              if (c_code == c_code2) {
+                console.log("Country Matching");
+                getResult2(1, res2.data[j]);
+              } else {
+              }
+            } else if (type == "region") {
+              if (c_code == c_code2) {
+                console.log(region, region2);
+                if (region == region2) {
+                  console.log("Region matching");
+                  getResult2(1, res2.data[j]);
+                } else {
+                  getResult2(2, "nothing Matching");
+                }
+              }
+            } else if (type == "locality") {
+              if (locality == locality2) {
+                console.log("locality matching");
+                getResult2(1, res2.data[j]);
+              }
+            } else if (type == "neighbourhood") {
+            } else {
+              getResult2(2, "nothing Matching");
+              console.log("nothing Matching");
+            }
+          }
+        }
+      }
+
+      function get_coordinate(addr) {
+        var result = "";
+        $.ajax({
+          url:
+            "http://api.positionstack.com/v1/forward?access_key=72c76ad8082ee9e135c2834394c63dfa&query=" +
+            addr,
+          async: false,
+          success: function (data) {
+            result = data;
+          },
+        });
+        return result;
+      }
+
+      function getResult2(step, arr) {
+        if (step == 1) {
+          var out = "<br />";
+          var i;
+          out +=
+            "<div class='address' title='Show Location and Coordinates' onclick='chooseAddr(" +
+            arr.latitude +
+            ", " +
+            arr.longitude +
+            ");return false;'>" +
+            arr.label +
+            "</div>";
+          document.getElementById("results2").innerHTML = out;
+        } else {
+          document.getElementById("results2").innerHTML = "NOT Matching";
+        }
+      }
+    </script>
+  </body>
+</html>

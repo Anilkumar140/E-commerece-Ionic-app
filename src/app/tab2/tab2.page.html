@@ -1,0 +1,44 @@
+
+
+  <ion-grid>
+    <ion-row>
+      <ion-col size="1">
+        <span
+          class="slider-nav arrow-prev"
+          (click)="slidePrev(sliderOne,slideWithNav)"
+        >
+          <div
+            class="prev-icon-custom custon-nav"
+            [class.disabled]="sliderOne.isBeginningSlide"
+          ></div>
+        </span>
+      </ion-col>
+      <ion-col size="10">
+        <ion-slides
+          style="width: 300px"
+          pager="false"
+          [options]="slideOptions"
+          #slideWithNav
+          (ionSlideDidChange)="SlideDidChange(sliderOne,slideWithNav)"
+        >
+          <ion-slide *ngFor="let s of sliderOne.slidesItems">
+            <img
+              src="https://blog.placeit.net/wp-content/uploads/2017/03/facebook-ad-image-promoting-t-shirts-1024x536.png"
+            />
+          </ion-slide>
+        </ion-slides>
+      </ion-col>
+      <ion-col size="1">
+        <span
+          class="slider-nav arrow-next"
+          (click)="slideNext(sliderOne,slideWithNav)"
+        >
+          <div
+            class="next-icon-custom custon-nav"
+            [class.disabled]="sliderOne.isEndSlide"
+          ></div>
+        </span>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
